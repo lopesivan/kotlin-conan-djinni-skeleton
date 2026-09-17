@@ -2,6 +2,10 @@
 # SCRCPY -- espelhamento básico
 # -----------------------------------------------------------------------------
 
+ifdef ADB_SELECTED_DEVICE
+  SCRCPY := $(SCRCPY) -s $(ADB_SELECTED_DEVICE)
+endif
+
 scrcpy: ## espelha a tela no PC
 	$(call log,$@)
 	$(SCRCPY)
@@ -106,26 +110,26 @@ scrcpy-webcam: ## usa celular como webcam via v4l2loopback em /dev/video0
 
 scrcpy-record: ## grava tela em mp4 com timestamp no nome
 	$(call log,$@)
-	$(SCRCPY) --record=/tmp/galaxy-$(shell date +%Y%m%d-%H%M%S).mp4
+	$(SCRCPY) --record=/tmp/$(ADB_SELECTED_DEVICE)-$(shell date +%Y%m%d-%H%M%S).mp4
 
 scrcpy-record-mkv: ## grava tela em mkv com timestamp no nome
 	$(call log,$@)
-	$(SCRCPY) --record=/tmp/galaxy-$(shell date +%Y%m%d-%H%M%S).mkv
+	$(SCRCPY) --record=/tmp/$(ADB_SELECTED_DEVICE)-$(shell date +%Y%m%d-%H%M%S).mkv
 
 scrcpy-record-audio: ## grava somente áudio em opus com timestamp no nome
 	$(call log,$@)
 	$(SCRCPY) --no-video \
-	          --record=/tmp/galaxy-$(shell date +%Y%m%d-%H%M%S).opus
+	          --record=/tmp/$(ADB_SELECTED_DEVICE)-$(shell date +%Y%m%d-%H%M%S).opus
 
 scrcpy-record-camera: ## grava câmera traseira em mp4 com timestamp no nome
 	$(call log,$@)
 	$(SCRCPY) --video-source=camera \
 	          --camera-facing=back \
-	          --record=/tmp/camera-$(shell date +%Y%m%d-%H%M%S).mp4
+	          --record=/tmp/$(ADB_SELECTED_DEVICE)-$(shell date +%Y%m%d-%H%M%S).mp4
 
 scrcpy-timelimit: ## grava tela por 60 segundos com timestamp no nome
 	$(call log,$@)
-	$(SCRCPY) --record=/tmp/galaxy-$(shell date +%Y%m%d-%H%M%S).mp4 \
+	$(SCRCPY) --record=/tmp/$(ADB_SELECTED_DEVICE)-$(shell date +%Y%m%d-%H%M%S).mp4 \
 	          --time-limit=60
 
 # -----------------------------------------------------------------------------
