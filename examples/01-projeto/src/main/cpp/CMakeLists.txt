@@ -17,15 +17,15 @@ file(GLOB DJINNI_JNI_SOURCES CONFIGURE_DEPENDS
     "${DJINNI_JNI_DIR}/*.cpp"
 )
 
-file(GLOB_RECURSE DJINNI_SUPPORT_SOURCES CONFIGURE_DEPENDS
-    "${DJINNI_SUPPORT_DIR}/djinni/jni/*.cpp"
+set(DJINNI_SUPPORT_SOURCE
+    "${DJINNI_SUPPORT_DIR}/djinni/jni/djinni_support.cpp"
 )
 
 if(NOT DJINNI_JNI_SOURCES)
     message(FATAL_ERROR "Fontes JNI do Djinni ausentes. Execute a tarefa generateDjinni.")
 endif()
 
-if(NOT DJINNI_SUPPORT_SOURCES)
+if(NOT EXISTS "${DJINNI_SUPPORT_SOURCE}")
     message(FATAL_ERROR "djinni-support-lib ausente. Execute a tarefa generateDjinni.")
 endif()
 
@@ -34,7 +34,7 @@ add_library(
     SHARED
     NativeApi.cpp
     ${DJINNI_JNI_SOURCES}
-    ${DJINNI_SUPPORT_SOURCES}
+    "${DJINNI_SUPPORT_SOURCE}"
 )
 
 target_include_directories(
