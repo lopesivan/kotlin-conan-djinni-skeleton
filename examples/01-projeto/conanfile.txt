@@ -1,0 +1,6 @@
+[requires]
+luapp/5.3.6
+
+[generators]
+CMakeToolchain
+CMakeDeps
