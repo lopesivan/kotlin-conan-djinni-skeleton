@@ -13,3 +13,4 @@ out/
 conan.lock
 conanbuildinfo.*
 
+gradle/wrapper/gradle-wrapper.jar

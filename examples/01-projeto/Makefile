@@ -30,6 +30,9 @@ GIT   ?= git
 
 GRADLEW            := $(ROOT)/gradlew
 GRADLE_WRAPPER_DIR := $(ROOT)/gradle/wrapper
+GRADLE_WRAPPER_JAR := $(GRADLE_WRAPPER_DIR)/gradle-wrapper.jar
+GRADLE_WRAPPER_JAR_URL := https://raw.githubusercontent.com/gradle/gradle/v$(GRADLE_VERSION)/gradle/wrapper/gradle-wrapper.jar
+GRADLE_WRAPPER_JAR_SHA256 := 497c8c2a7e5031f6aa847f88104aa80a93532ec32ee17bdb8d1d2f67a194a9c7
 LOCAL_PROPERTIES   := $(ROOT)/local.properties
 DJINNI_SCRIPT      := $(PROJECT_DIR)/generate-djinni.sh
 
@@ -47,13 +50,14 @@ log = @printf "\033[36m[make]\033[0m %s\n" "$(1)"
 
 .DEFAULT_GOAL := help
 
-.PHONY: help init djinni build install run stop uninstall clean logcat devices
+.PHONY: help wrapper init djinni build install run stop uninstall clean logcat devices
 
 ## ---------------------------------------------------------------------------
 ## Ajuda
 ## ---------------------------------------------------------------------------
 
 help:
+	@printf "make wrapper    baixa e verifica o Gradle Wrapper JAR\n"
 	@printf "make init       verifica Gradle, Conan, Java e Android SDK\n"
 	@printf "make djinni     gera Java/JNI/C++ a partir do contrato\n"
 	@printf "make build      gera Djinni e compila o APK debug\n"
@@ -66,7 +70,31 @@ help:
 ## Preparação e verificação
 ## ---------------------------------------------------------------------------
 
-init:
+wrapper:
+	$(call log,$@)
+	@command -v curl >/dev/null 2>&1 || \
+		{ echo "Erro: curl não encontrado"; exit 1; }
+	@mkdir -p "$(GRADLE_WRAPPER_DIR)"
+	@if [ -f "$(GRADLE_WRAPPER_JAR)" ] && \
+		printf '%s  %s\n' \
+			"$(GRADLE_WRAPPER_JAR_SHA256)" \
+			"$(GRADLE_WRAPPER_JAR)" | sha256sum --check --status; then \
+		echo "Gradle Wrapper JAR já existe"; \
+	else \
+		tmp="$(GRADLE_WRAPPER_JAR).tmp"; \
+		trap 'rm -f "$$tmp"' EXIT; \
+		curl --fail --location --silent --show-error \
+			"$(GRADLE_WRAPPER_JAR_URL)" --output "$$tmp"; \
+		printf '%s  %s\n' \
+			"$(GRADLE_WRAPPER_JAR_SHA256)" "$$tmp" | \
+			sha256sum --check --status || \
+			{ echo "Erro: checksum inválido do Gradle Wrapper JAR"; exit 1; }; \
+		mv "$$tmp" "$(GRADLE_WRAPPER_JAR)"; \
+		trap - EXIT; \
+		echo "Gradle Wrapper JAR baixado e verificado"; \
+	fi
+
+init: wrapper
 	$(call log,$@)
 
 	@test -d "$(ANDROID_SDK)" || \

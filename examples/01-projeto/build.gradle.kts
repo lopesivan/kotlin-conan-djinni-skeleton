@@ -1,8 +1,58 @@
-import org.gradle.api.tasks.Exec
+import org.gradle.api.DefaultTask
+import org.gradle.api.file.DirectoryProperty
+import org.gradle.api.file.RegularFileProperty
+import org.gradle.api.tasks.InputFile
+import org.gradle.api.tasks.OutputDirectory
+import org.gradle.api.tasks.PathSensitive
+import org.gradle.api.tasks.PathSensitivity
+import org.gradle.api.tasks.TaskAction
+import org.gradle.process.ExecOperations
+import org.gradle.work.DisableCachingByDefault
+import javax.inject.Inject
 
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.compose.compiler)
+}
+
+@DisableCachingByDefault(because = "Executa o gerador Djinni externo")
+abstract class GenerateDjinniTask @Inject constructor(
+    private val execOperations: ExecOperations,
+) : DefaultTask() {
+
+    @get:InputFile
+    @get:PathSensitive(PathSensitivity.RELATIVE)
+    abstract val scriptFile: RegularFileProperty
+
+    @get:InputFile
+    @get:PathSensitive(PathSensitivity.RELATIVE)
+    abstract val contractFile: RegularFileProperty
+
+    @get:InputFile
+    @get:PathSensitive(PathSensitivity.RELATIVE)
+    abstract val conanRecipeFile: RegularFileProperty
+
+    @get:OutputDirectory
+    abstract val javaOutputDirectory: DirectoryProperty
+
+    @get:OutputDirectory
+    abstract val cppOutputDirectory: DirectoryProperty
+
+    @get:OutputDirectory
+    abstract val jniOutputDirectory: DirectoryProperty
+
+    @get:OutputDirectory
+    abstract val conanOutputDirectory: DirectoryProperty
+
+    @get:OutputDirectory
+    abstract val supportOutputDirectory: DirectoryProperty
+
+    @TaskAction
+    fun generate() {
+        execOperations.exec {
+            commandLine(scriptFile.get().asFile.absolutePath)
+        }
+    }
 }
 
 val requestedAbis = (findProperty("projectAbis") as String? ?: "arm64-v8a")
@@ -10,21 +60,20 @@ val requestedAbis = (findProperty("projectAbis") as String? ?: "arm64-v8a")
     .map(String::trim)
     .filter(String::isNotEmpty)
 
-val djinniOutput = layout.buildDirectory.dir("generated/djinni")
-val djinniJava = djinniOutput.map { it.dir("java") }
-
-val generateDjinni by tasks.registering(Exec::class) {
+val generateDjinni = tasks.register<GenerateDjinniTask>("generateDjinni") {
     group = "code generation"
     description = "Gera Java, JNI e C++ para o contrato native_api.djinni."
 
-    val script = layout.projectDirectory.file("generate-djinni.sh")
-    val contract = rootProject.layout.projectDirectory.file("projeto/djinni/native_api.djinni")
-
-    inputs.file(script)
-    inputs.file(contract)
-    outputs.dir(djinniOutput)
-
-    commandLine(script.asFile.absolutePath)
+    scriptFile.set(layout.projectDirectory.file("generate-djinni.sh"))
+    contractFile.set(
+        rootProject.layout.projectDirectory.file("projeto/djinni/native_api.djinni"),
+    )
+    conanRecipeFile.set(layout.projectDirectory.file("conanfile.txt"))
+    javaOutputDirectory.set(layout.buildDirectory.dir("generated/djinni/java"))
+    cppOutputDirectory.set(layout.buildDirectory.dir("generated/djinni/cpp"))
+    jniOutputDirectory.set(layout.buildDirectory.dir("generated/djinni/jni"))
+    conanOutputDirectory.set(layout.buildDirectory.dir("conan/djinni-generator"))
+    supportOutputDirectory.set(layout.buildDirectory.dir("djinni-support-lib"))
 }
 
 android {
@@ -66,12 +115,6 @@ android {
         }
     }
 
-    sourceSets {
-        named("main") {
-            java.srcDir(djinniJava)
-        }
-    }
-
     externalNativeBuild {
         cmake {
             path = file("src/main/cpp/CMakeLists.txt")
@@ -80,9 +123,17 @@ android {
     }
 }
 
+androidComponents {
+    onVariants(selector().all()) { variant ->
+        variant.sources.java?.addGeneratedSourceDirectory(
+            generateDjinni,
+            GenerateDjinniTask::javaOutputDirectory,
+        )
+    }
+}
+
 tasks.configureEach {
     if (
-        name == "preBuild" ||
         name.startsWith("configureCMake") ||
         name.startsWith("buildCMake") ||
         name.startsWith("externalNativeBuild")
