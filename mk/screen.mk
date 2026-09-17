@@ -6,18 +6,6 @@ screenshot: ## salva screenshot em screen.png
 	$(call log,$@)
 	@$(ADB) exec-out screencap -p > screen.png
 
-screenrecord:
-	$(call log,$@)
-	@$(ADB_EXEC_OUT) screenrecord --output-format=h264 - > video.h264
-
-video.mp4: video.h264
-	$(call log,$@)
-	$(FFMPEG) -i video.h264 video.mp4
-
-live-screen:
-	$(call log,$@)
-	@$(ADB_EXEC_OUT) screenrecord  --output-format=h264 - | ffplay -
-
 layout-bounds-on: ## ativa debug visual dos limites de layout
 	$(call log,$@)
 	@$(SETTINGS) put global debug_layout 1
