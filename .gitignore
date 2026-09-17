@@ -1,0 +1,15 @@
+.gradle/
+.idea/
+local.properties
+**/build/
+build/
+cmake-build-*/
+out/
+*.iml
+*.apk
+*.aab
+*.so
+*.a
+conan.lock
+conanbuildinfo.*
+

@@ -1,0 +1,4 @@
+native_api = interface +c {
+    static version(): string;
+}
+
