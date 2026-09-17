@@ -24,7 +24,9 @@ command -v java >/dev/null 2>&1 || {
 mkdir -p "$CONAN_DIR"
 
 if [ ! -f "$CONAN_DIR/conanbuild.sh" ]; then
-    conan install "$APP_DIR/conanfile.txt"         --output-folder="$CONAN_DIR"         --build=missing
+    conan install "$APP_DIR/conanfile.txt" \
+        --output-folder="$CONAN_DIR" \
+        --build=missing
 fi
 
 set +u
@@ -49,10 +51,24 @@ fi
 rm -rf "$OUTPUT_DIR"
 mkdir -p "$OUTPUT_DIR/cpp" "$OUTPUT_DIR/jni" "$OUTPUT_DIR/java"
 
-"$DJINNI_COMMAND"     --idl "$IDL_FILE"     --cpp-out "$OUTPUT_DIR/cpp"     --cpp-namespace generated     --java-out "$OUTPUT_DIR/java"     --java-package br.eng.ivanlopes.projeto01.generated     --jni-out "$OUTPUT_DIR/jni"     --ident-jni-class NativeFooBar     --ident-jni-file NativeFooBar     --jni-generate-main true
+"$DJINNI_COMMAND" \
+    --idl "$IDL_FILE" \
+    --cpp-out "$OUTPUT_DIR/cpp" \
+    --cpp-namespace generated \
+    --java-out "$OUTPUT_DIR/java" \
+    --java-package br.eng.ivanlopes.projeto01.generated \
+    --jni-out "$OUTPUT_DIR/jni" \
+    --ident-jni-class NativeFooBar \
+    --ident-jni-file NativeFooBar \
+    --jni-generate-main true
 
 test -f "$OUTPUT_DIR/cpp/native_api.hpp"
 test -f "$OUTPUT_DIR/jni/NativeNativeApi.cpp"
-test -f "$OUTPUT_DIR/java/br/eng/ivanlopes/projeto01/generated/NativeApi.java"
+
+if [ ! -f "$OUTPUT_DIR/java/NativeApi.java" ] &&
+   [ ! -f "$OUTPUT_DIR/java/br/eng/ivanlopes/projeto01/generated/NativeApi.java" ]; then
+    echo "ERRO: NativeApi.java nao foi gerado." >&2
+    exit 1
+fi
 
 printf 'Djinni gerado em %s\n' "$OUTPUT_DIR"
