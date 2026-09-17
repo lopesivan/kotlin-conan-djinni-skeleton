@@ -4,8 +4,6 @@
 
 ifdef ADB_SELECTED_DEVICE
   ADB := $(ADB) -s $(ADB_SELECTED_DEVICE)
-else
-  ADB := $(ADB)
 endif
 
 ADB_SHELL     := $(ADB) shell
