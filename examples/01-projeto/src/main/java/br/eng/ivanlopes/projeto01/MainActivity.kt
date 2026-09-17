@@ -11,19 +11,34 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import br.eng.ivanlopes.projeto01.generated.NativeApi
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContent { ProjectScreen(number = 1) }
+        setContent { ProjectScreen() }
     }
 }
 
+private object NativeBridge {
+    init {
+        System.loadLibrary("project01_native")
+    }
+
+    fun message(): String = NativeApi.helloFromCpp()
+}
+
 @Composable
-private fun ProjectScreen(number: Int) {
+private fun ProjectScreen() {
+    val nativeMessage = remember {
+        runCatching(NativeBridge::message)
+            .getOrElse { error -> "Falha ao chamar C++: ${error.message}" }
+    }
+
     MaterialTheme {
         Surface(modifier = Modifier.fillMaxSize()) {
             Column(
@@ -31,10 +46,15 @@ private fun ProjectScreen(number: Int) {
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                Text("Projeto $number", style = MaterialTheme.typography.headlineMedium)
-                Text("Aplicativo Kotlin/Compose pronto para receber uma interface Djinni.")
+                Text(
+                    text = "Projeto 01",
+                    style = MaterialTheme.typography.headlineMedium,
+                )
+                Text(
+                    text = nativeMessage,
+                    modifier = Modifier.padding(top = 12.dp),
+                )
             }
         }
     }
 }
-

@@ -3,6 +3,8 @@ agp = "9.4.0"
 compileSdk = "37"
 targetSdk = "36"
 minSdk = "24"
+ndk = "29.0.14206865"
+cmake = "4.4.3"
 composeBom = "2026.06.00"
 activity = "1.13.0"
 coreKtx = "1.19.0"
@@ -19,4 +21,3 @@ core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx"
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
-

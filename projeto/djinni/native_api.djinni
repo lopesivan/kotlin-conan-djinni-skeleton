@@ -1,4 +1,3 @@
 native_api = interface +c {
-    static version(): string;
+    static hello_from_cpp(): string;
 }
-

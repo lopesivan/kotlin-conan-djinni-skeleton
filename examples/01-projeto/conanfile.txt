@@ -1,6 +1,2 @@
-[requires]
-luapp/5.3.6
-
-[generators]
-CMakeToolchain
-CMakeDeps
+[tool_requires]
+djinni-generator/1.4.0
