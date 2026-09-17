@@ -1,12 +1,10 @@
 SHELL := /bin/bash
+ROOT  := ../..
 
 ## ---------------------------------------------------------------------------
 ## Caminhos do projeto
 ## ---------------------------------------------------------------------------
 
-MAKEFILE_DIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
-PROJECT_DIR  := $(patsubst %/,%,$(MAKEFILE_DIR))
-ROOT         := $(abspath $(PROJECT_DIR)/../..)
 
 ANDROID_SDK    ?= /home/ivan/Android/Sdk
 NDK_VERSION    := 29.0.14206865
@@ -28,29 +26,48 @@ CONAN ?= conan
 JAVA  ?= java
 GIT   ?= git
 
-GRADLEW            := $(ROOT)/gradlew
-GRADLE_WRAPPER_DIR := $(ROOT)/gradle/wrapper
-GRADLE_WRAPPER_JAR := $(GRADLE_WRAPPER_DIR)/gradle-wrapper.jar
-GRADLE_WRAPPER_JAR_URL := https://raw.githubusercontent.com/gradle/gradle/v$(GRADLE_VERSION)/gradle/wrapper/gradle-wrapper.jar
+GRADLEW                   := $(ROOT)/gradlew
+GRADLE_WRAPPER_DIR        := $(ROOT)/gradle/wrapper
+GRADLE_WRAPPER_JAR        := $(GRADLE_WRAPPER_DIR)/gradle-wrapper.jar
+GRADLE_WRAPPER_JAR_URL    := https://raw.githubusercontent.com/gradle/gradle/v$(GRADLE_VERSION)/gradle/wrapper/gradle-wrapper.jar
 GRADLE_WRAPPER_JAR_SHA256 := 497c8c2a7e5031f6aa847f88104aa80a93532ec32ee17bdb8d1d2f67a194a9c7
-LOCAL_PROPERTIES   := $(ROOT)/local.properties
-DJINNI_SCRIPT      := $(PROJECT_DIR)/generate-djinni.sh
+LOCAL_PROPERTIES          := $(ROOT)/local.properties
+DJINNI_SCRIPT             := generate-djinni.sh
 
 MODULE   := :examples:01-projeto
 PACKAGE  := br.eng.ivanlopes.projeto01
 ACTIVITY := .MainActivity
-APK      := $(PROJECT_DIR)/build/outputs/apk/debug/01-projeto-debug.apk
+APK      := build/outputs/apk/debug/01-projeto-debug.apk
+ABI      ?= arm64-v8a
 
-ABI    ?= arm64-v8a
-DEVICE ?=
-
-ADB_TARGET := $(if $(DEVICE),-s $(DEVICE),)
+ADB_SELECTED_DEVICE := 7535c5b5
+ADB_SELECTED_DEVICE := RX8N9045ELX
+DEVICE              ?= ADB_SELECTED_DEVICE
 
 log = @printf "\033[36m[make]\033[0m %s\n" "$(1)"
 
 .DEFAULT_GOAL := help
 
+##############################################################################
+# INCLUDES
+##############################################################################
+include $(ROOT)/mk/tools.mk
 .PHONY: help wrapper init djinni build install run stop uninstall clean logcat devices
+
+##############################################################################
+# INCLUDES ADICIONAIS
+##############################################################################
+include $(ROOT)/mk/onoff.mk
+include $(ROOT)/mk/keycode.mk
+include $(ROOT)/mk/energy.mk
+include $(ROOT)/mk/asciinema.mk
+include $(ROOT)/mk/scrcpy.mk
+include $(ROOT)/mk/screen.mk
+include $(ROOT)/mk/android_inter.mk
+
+ifdef ADB_SELECTED_DEVICE
+include $(ROOT)/mk/$(ADB_SELECTED_DEVICE).mk
+endif
 
 ## ---------------------------------------------------------------------------
 ## Ajuda
@@ -185,7 +202,7 @@ init: wrapper
 ## Geração de código
 ## ---------------------------------------------------------------------------
 
-djinni: init
+djinni:
 	$(call log,$@)
 	@cd "$(ROOT)" && "$(GRADLEW)" $(MODULE):generateDjinni
 
@@ -193,29 +210,31 @@ djinni: init
 ## Compilação, instalação e execução
 ## ---------------------------------------------------------------------------
 
-build: init
+build:
 	$(call log,$@)
 	@cd "$(ROOT)" && "$(GRADLEW)" $(MODULE):assembleDebug \
 		-PprojectAbis="$(ABI)"
 
-install: build
+install:
 	$(call log,$@)
 	@test -f "$(APK)" || \
 		{ echo "Erro: APK não encontrado em $(APK)"; exit 1; }
-	@$(ADB) $(ADB_TARGET) install -r "$(APK)"
+	@$(ADB) install -r "$(APK)"
 
-run: install
+run:
 	$(call log,$@)
-	@$(ADB) $(ADB_TARGET) shell am start \
+	@$(ADB) shell am start \
 		-n "$(PACKAGE)/$(ACTIVITY)"
 
 stop:
 	$(call log,$@)
-	@$(ADB) $(ADB_TARGET) shell am force-stop "$(PACKAGE)"
+	@$(ADB) shell am force-stop "$(PACKAGE)"
+
+restart: stop run ## encerra, reinstala e inicia a aplicação
 
 uninstall:
 	$(call log,$@)
-	-@$(ADB) $(ADB_TARGET) uninstall "$(PACKAGE)"
+	-@$(ADB) uninstall "$(PACKAGE)"
 
 ## ---------------------------------------------------------------------------
 ## Limpeza e diagnóstico
@@ -227,12 +246,23 @@ clean:
 
 logcat:
 	$(call log,$@)
-	@pid="$$($(ADB) $(ADB_TARGET) shell pidof -s \
+	@pid="$$($(ADB) shell pidof -s \
 		"$(PACKAGE)" | tr -d '\r')"; \
 	test -n "$$pid" || \
 		{ echo "Aplicativo não está executando"; exit 1; }; \
-	$(ADB) $(ADB_TARGET) logcat --pid="$$pid"
+	$(ADB) logcat --pid="$$pid"
 
 devices:
 	$(call log,$@)
 	@$(ADB) devices -l
+
+shell: ## abre shell ADB
+	$(call log,$@)
+	$(ADB_SHELL)
+
+##############################################################################
+# APP — utilitários
+##############################################################################
+dry: ## Limpar todos os dados do app (fecha o app e limpa cache/storage)
+	$(call log,$@)
+	$(PM) clear $(PACKAGE)
