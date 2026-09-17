@@ -34,11 +34,18 @@ GRADLE_WRAPPER_JAR_SHA256 := 497c8c2a7e5031f6aa847f88104aa80a93532ec32ee17bdb8d1
 LOCAL_PROPERTIES          := $(ROOT)/local.properties
 DJINNI_SCRIPT             := generate-djinni.sh
 
-MODULE   := :examples:01-projeto
-PACKAGE  := br.eng.ivanlopes.projeto01
-ACTIVITY := .MainActivity
-APK      := build/outputs/apk/debug/01-projeto-debug.apk
-ABI      ?= arm64-v8a
+##############################################################################
+# MÓDULO
+##############################################################################
+MODULE_NAME := $(notdir $(CURDIR))
+MODULE      := :examples:$(MODULE_NAME)
+PACKAGE     := br.eng.ivanlopes.projeto01
+ACTIVITY    := .MainActivity
+APK         := build/outputs/apk/debug/$(MODULE_NAME)-debug.apk
+ABI         ?= arm64-v8a
+
+LOCKFILE    := conan.lock
+
 
 ADB_SELECTED_DEVICE := 7535c5b5
 ADB_SELECTED_DEVICE := RX8N9045ELX
