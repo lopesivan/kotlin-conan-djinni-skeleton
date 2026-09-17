@@ -5,7 +5,6 @@ ROOT  := ../..
 ## Caminhos do projeto
 ## ---------------------------------------------------------------------------
 
-
 ANDROID_SDK    ?= /home/ivan/Android/Sdk
 NDK_VERSION    := 29.0.14206865
 CMAKE_VERSION  := 4.4.3
@@ -19,8 +18,8 @@ CMAKE      := $(CMAKE_HOME)/bin/cmake
 
 ## Ninja encontrado no PATH
 NINJA := $(shell command -v ninja 2>/dev/null)
+ADB   := $(ANDROID_SDK)/platform-tools/adb
 
-ADB := $(ANDROID_SDK)/platform-tools/adb
 
 CONAN ?= conan
 JAVA  ?= java
@@ -127,7 +126,7 @@ init: wrapper
 	@test -d "$(ANDROID_NDK_HOME)" || \
 		{ echo "Erro: NDK não encontrado em $(ANDROID_NDK_HOME)"; exit 1; }
 
-	@test -x "$(ADB)" || \
+	@test -n "$(ADB)" || \
 		{ echo "Erro: adb não encontrado em $(ADB)"; exit 1; }
 
 	@test -d "$(CMAKE_HOME)" || \
@@ -203,7 +202,7 @@ init: wrapper
 	@echo "  Java   : $$($(JAVA) -version 2>&1 | head -n 1)"
 	@echo "  Git    : $$($(GIT) --version)"
 	@echo
-	@cd "$(ROOT)" && "$(GRADLEW)" --version
+	@"$(GRADLEW)" --version
 
 ## ---------------------------------------------------------------------------
 ## Geração de código
@@ -211,7 +210,7 @@ init: wrapper
 
 djinni:
 	$(call log,$@)
-	@cd "$(ROOT)" && "$(GRADLEW)" $(MODULE):generateDjinni
+	@"$(GRADLEW)" $(MODULE):generateDjinni
 
 ## ---------------------------------------------------------------------------
 ## Compilação, instalação e execução
@@ -219,7 +218,7 @@ djinni:
 
 build:
 	$(call log,$@)
-	@cd "$(ROOT)" && "$(GRADLEW)" $(MODULE):assembleDebug \
+	@"$(GRADLEW)" $(MODULE):assembleDebug \
 		-PprojectAbis="$(ABI)"
 
 install:
@@ -249,7 +248,7 @@ uninstall:
 
 clean:
 	$(call log,$@)
-	@cd "$(ROOT)" && "$(GRADLEW)" $(MODULE):clean
+	"$(GRADLEW)" $(MODULE):clean
 
 logcat:
 	$(call log,$@)
